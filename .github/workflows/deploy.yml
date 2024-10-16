@@ -65,25 +65,25 @@ jobs:
       - name: Deploy to SharePoint App Catalog
         shell: pwsh
         env:
-            SP_APP_CATALOG_URL: ${{ secrets.SP_APP_CATALOG_URL }}
-            SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
-            SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
+          SP_APP_CATALOG_URL: ${{ secrets.SP_APP_CATALOG_URL }}
+          SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
+          SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
         run: |
-            # Connect to SharePoint App Catalog using Client ID and Secret
-            Connect-PnPOnline -Url $env:SP_APP_CATALOG_URL -ClientId $env:SP_CLIENT_ID -ClientSecret $env:SP_CLIENT_SECRET -Tenant "xllearnings.sharepoint.com"
-        
-            # List the package path
-            $packagePath = Get-ChildItem -Path "./sharepoint/solution/" -Filter *.sppkg | Select-Object -First 1
-            if ($packagePath) {
-              Write-Host "Package Path: $($packagePath.FullName)"
-              Add-PnPApp -Path $packagePath.FullName -Scope Tenant -Overwrite
-            } else {
-              Write-Error "No .sppkg file found in the solution folder."
-              exit 1
-            }
-        
-            # Deploy the app if it's not already deployed
-            $app = Get-PnPApp | Where-Object { $_.Title -eq "Test" } # Replace with your actual app name
-            if ($app -and -not $app.IsDeployed) {
-              Install-PnPApp -Identity $app.Id -Scope Tenant
-            }
+          # Connect to SharePoint App Catalog using Client ID and Secret
+          Connect-PnPOnline -Url $env:SP_APP_CATALOG_URL -ClientId $env:SP_CLIENT_ID -ClientSecret $env:SP_CLIENT_SECRET -Tenant xllearnings.sharepoint.com
+          
+          # List the package path
+          $packagePath = Get-ChildItem -Path "./sharepoint/solution/" -Filter *.sppkg | Select-Object -First 1
+          if ($packagePath) {
+            Write-Host "Package Path: $($packagePath.FullName)"
+            Add-PnPApp -Path $packagePath.FullName -Scope Tenant -Overwrite
+          } else {
+            Write-Error "No .sppkg file found in the solution folder."
+            exit 1
+          }
+
+          # Deploy the app if it's not already deployed
+          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace with your actual app name
+          if ($app -and -not $app.IsDeployed) {
+            Install-PnPApp -Identity $app.Id -Scope Tenant
+          }
