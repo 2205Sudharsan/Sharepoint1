@@ -20,10 +20,12 @@ jobs:
       # 2. Setup Node.js 8.x, Python 2, and Gulp
       - name: Setup Node.js 8.x, Python 2, and Gulp
         run: |
-          # Install NVM (Node Version Manager)
+          # Install NVM (Node Version Manager) - Latest Stable Version
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
           export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Load NVM
+          # Load NVM into the shell session
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
           # Install Node.js 8.x
           nvm install 8
@@ -38,7 +40,8 @@ jobs:
           # Install Python 2
           sudo apt-get update
           sudo apt-get install -y python2
-          sudo ln -s /usr/bin/python2 /usr/bin/python  # Link 'python' to 'python2'
+          # Create a symbolic link so that 'python' points to 'python2'
+          sudo ln -sf /usr/bin/python2 /usr/bin/python
 
           # Verify Python installation
           echo "Python version:"
@@ -48,6 +51,7 @@ jobs:
           npm install -g gulp@3.9.1
 
           # Verify Gulp installation
+          echo "Gulp version:"
           gulp -v
 
       # 3. Install Project Dependencies
@@ -99,7 +103,7 @@ jobs:
           }
 
           # Deploy the app if it's not already deployed
-          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace "Test" with your actual app name
+          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace "YourAppName" with your actual app name
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
