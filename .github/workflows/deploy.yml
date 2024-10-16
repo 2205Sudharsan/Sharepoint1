@@ -40,28 +40,28 @@ jobs:
       - name: Install Dependencies
         run: npm install --silent
 
-
-      # 7. Bundle the Project
+      # 6. Bundle the Project
       - name: Bundle the Package
         run: gulp bundle --ship --silent
 
-      # 8. Package the Solution
+      # 7. Package the Solution
       - name: Package Solution
         run: gulp package-solution --ship --silent
 
-      # 9. Upload the Packaged .sppkg File as an Artifact
+      # 8. Upload the Packaged .sppkg File as an Artifact
       - name: Upload Package Artifact
         uses: actions/upload-artifact@v3
         with:
           name: sharepoint-package
           path: ./sharepoint/solution/*.sppkg
 
-      # 10. Install PnP PowerShell Module
+      # 9. Install PnP PowerShell Module
       - name: Install PnP PowerShell
         shell: pwsh
-        run: Install-Module -Name PnP.PowerShell -Force -Scope CurrentUser
+        run: |
+          Install-Module -Name PnP.PowerShell -Force -Scope CurrentUser -AllowClobber
 
-      # 11. Deploy to SharePoint App Catalog
+      # 10. Deploy to SharePoint App Catalog
       - name: Deploy to SharePoint App Catalog
         shell: pwsh
         env:
@@ -69,8 +69,18 @@ jobs:
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
         run: |
+          # Print environment variables for debugging
+          Write-Host "SP_APP_CATALOG_URL: $env:SP_APP_CATALOG_URL"
+          Write-Host "SP_CLIENT_ID: $env:SP_CLIENT_ID"  # Avoid printing secrets
+          
+          # Check if URL is set
+          if (-not $env:SP_APP_CATALOG_URL) {
+            Write-Error "SP_APP_CATALOG_URL is not set. Exiting..."
+            exit 1
+          }
+
           # Connect to SharePoint App Catalog using Client ID and Secret
-          Connect-PnPOnline -Url $env:SP_APP_CATALOG_URL -ClientId $env:SP_CLIENT_ID -ClientSecret $env:SP_CLIENT_SECRET -Tenant "xllearnings.sharepoint.com"
+          Connect-PnPOnline -Url $env:SP_APP_CATALOG_URL -ClientId $env:SP_CLIENT_ID -ClientSecret $env:SP_CLIENT_SECRET
 
           # Deploy the SPFx package to the App Catalog
           $packagePath = Get-ChildItem -Path "./sharepoint/solution/" -Filter *.sppkg | Select-Object -First 1
@@ -82,8 +92,7 @@ jobs:
           }
 
           # Deploy the app if it's not already deployed
-          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" }  # Replace with your actual app name
+          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace with your actual app name
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
-
