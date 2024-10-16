@@ -1,0 +1,88 @@
+name: Deploy SharePoint Web Part
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the 'main' branch
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 2. Install Node.js 8.x using NVM
+      - name: Install Node.js 8.x using NVM
+        run: |
+          # Install NVM
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          
+          # Install Node.js 8.x
+          nvm install 8
+          nvm use 8
+          
+          # Verify installation
+          node -v
+          npm -v
+
+      # 3. Install Project Dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. Build the Project
+      - name: Build the Package
+        run: npm run build --if-present
+
+      # 5. Bundle the Project
+      - name: Bundle the Package
+        run: npm run bundle --if-present
+
+      # 6. Package the Solution
+      - name: Package Solution
+        run: npm run package-solution --if-present
+
+      # 7. Upload the Packaged .sppkg File as an Artifact
+      - name: Upload Package Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sharepoint-package
+          path: ./sharepoint/solution/*.sppkg
+
+      # 8. Install PnP PowerShell Module
+      - name: Install PnP PowerShell
+        shell: pwsh
+        run: Install-Module -Name PnP.PowerShell -Force -Scope CurrentUser
+
+      # 9. Deploy to SharePoint App Catalog
+      - name: Deploy to SharePoint App Catalog
+        shell: pwsh
+        env:
+          SP_APP_CATALOG_URL: ${{ secrets.SP_APP_CATALOG_URL }}
+          SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
+          SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
+        run: |
+          # Connect to SharePoint App Catalog using Client ID and Secret
+          Connect-PnPOnline -Url $env:SP_APP_CATALOG_URL -ClientId $env:SP_CLIENT_ID -ClientSecret $env:SP_CLIENT_SECRET -Tenant "xllearnings.sharepoint.com"
+
+          # Deploy the SPFx package to the App Catalog
+          $packagePath = Get-ChildItem -Path "./sharepoint/solution/" -Filter *.sppkg | Select-Object -First 1
+          if ($packagePath) {
+            Add-PnPApp -Path $packagePath.FullName -Scope Tenant -Overwrite
+          } else {
+            Write-Error "No .sppkg file found in the solution folder."
+            exit 1
+          }
+
+          # Deploy the app if it's not already deployed
+          $app = Get-PnPApp | Where-Object { $_.Title -eq "Test" } # Replace with your actual app name
+          if ($app -and -not $app.IsDeployed) {
+            Install-PnPApp -Identity $app.Id -Scope Tenant
+          }
