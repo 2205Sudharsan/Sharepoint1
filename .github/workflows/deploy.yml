@@ -63,9 +63,12 @@ jobs:
           SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
           SP_CLIENT_SECRET: ${{ secrets.SP_CLIENT_SECRET }}
         run: |
+          # Install PnP PowerShell Module
+          Install-Module -Name PnP.PowerShell -AllowClobber -Force -Scope CurrentUser
+      
           # Connect to SharePoint App Catalog using Client ID and Client Secret
           Connect-PnPOnline -Url $env:SP_APP_CATALOG_URL -ClientId $env:SP_CLIENT_ID -ClientSecret $env:SP_CLIENT_SECRET
-
+      
           # List the package path
           $packagePath = Get-ChildItem -Path "./sharepoint/solution/" -Filter *.sppkg | Select-Object -First 1
           if ($packagePath) {
@@ -75,10 +78,11 @@ jobs:
             Write-Error "No .sppkg file found in the solution folder."
             exit 1
           }
-
+      
           # Deploy the app if it's not already deployed
           $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace with your actual app name
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
+
 
