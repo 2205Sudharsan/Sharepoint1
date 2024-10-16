@@ -55,7 +55,7 @@ jobs:
           name: sharepoint-package
           path: ./sharepoint/solution/*.sppkg
 
-      # 9. Deploy to SharePoint App Catalog
+      # Deploy to SharePoint App Catalog
       - name: Deploy to SharePoint App Catalog
         shell: pwsh
         env:
@@ -73,7 +73,15 @@ jobs:
           $packagePath = Get-ChildItem -Path "./sharepoint/solution/" -Filter *.sppkg | Select-Object -First 1
           if ($packagePath) {
             Write-Host "Package Path: $($packagePath.FullName)"
-            Add-PnPApp -Path $packagePath.FullName -Scope Tenant -Overwrite
+            
+            # Check if package exists
+            if (Test-Path $packagePath.FullName) {
+                Write-Host "Package found: $($packagePath.FullName)"
+                Add-PnPApp -Path $packagePath.FullName -Scope Tenant -Overwrite
+            } else {
+                Write-Error "Package not found at path: $($packagePath.FullName)"
+                exit 1
+            }
           } else {
             Write-Error "No .sppkg file found in the solution folder."
             exit 1
@@ -84,5 +92,3 @@ jobs:
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
-
-
