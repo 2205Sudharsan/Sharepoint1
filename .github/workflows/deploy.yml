@@ -3,7 +3,7 @@ name: Deploy SharePoint Web Part
 on:
   push:
     branches:
-      - main  # Trigger on push to the 'main' branch
+      - main
   pull_request:
     branches:
       - main
@@ -17,72 +17,51 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2. Setup Node.js 14.x, Python 2, and Gulp
-      - name: Setup Node.js 14.x, Python 2, and Gulp
-        run: |
-          # Install NVM (Node Version Manager) - Latest Stable Version
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          # Load NVM into the shell session
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+      # 2. Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '8.17.0'  # Specify the Node.js version
 
-          # Install Node.js 14.x
-          nvm install 14
-          nvm use 14
+      # 3. Install Gulp globally
+      - name: Install Gulp@3.9.1
+        run: npm install --global gulp-cli
 
-          # Verify Node.js and npm installation
-          echo "Node.js version:"
-          node -v
-          echo "npm version:"
-          npm -v
+      # 4. Cache Node modules
+      - name: Cache Node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
 
-          # Install Python 2
-          sudo apt-get update
-          sudo apt-get install -y python2
-          # Create a symbolic link so that 'python' points to 'python2'
-          sudo ln -sf /usr/bin/python2 /usr/bin/python
-
-          # Verify Python installation
-          echo "Python version:"
-          python --version
-
-          # Install Gulp globally (version 3.9.1)
-          npm install -g gulp@3.9.1
-
-          # Verify Gulp installation
-          echo "Gulp version:"
-          gulp -v
-
-      # 3. Install Project Dependencies
+      # 5. Install Project Dependencies
       - name: Install Dependencies
-        run: npm ci
+        run: npm install --silent
 
-      # 4. Build the Project
-      - name: Build the Package
-        run: gulp build
 
-      # 5. Bundle the Project
+      # 7. Bundle the Project
       - name: Bundle the Package
-        run: gulp bundle
+        run: gulp bundle --ship --silent
 
-      # 6. Package the Solution
+      # 8. Package the Solution
       - name: Package Solution
-        run: gulp package-solution
+        run: gulp package-solution --ship --silent
 
-      # 7. Upload the Packaged .sppkg File as an Artifact
+      # 9. Upload the Packaged .sppkg File as an Artifact
       - name: Upload Package Artifact
         uses: actions/upload-artifact@v3
         with:
           name: sharepoint-package
           path: ./sharepoint/solution/*.sppkg
 
-      # 8. Install PnP PowerShell Module
+      # 10. Install PnP PowerShell Module
       - name: Install PnP PowerShell
         shell: pwsh
         run: Install-Module -Name PnP.PowerShell -Force -Scope CurrentUser
 
-      # 9. Deploy to SharePoint App Catalog
+      # 11. Deploy to SharePoint App Catalog
       - name: Deploy to SharePoint App Catalog
         shell: pwsh
         env:
@@ -103,7 +82,7 @@ jobs:
           }
 
           # Deploy the app if it's not already deployed
-          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace "YourAppName" with your actual app name
+          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" }  # Replace with your actual app name
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
