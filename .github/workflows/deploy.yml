@@ -17,8 +17,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2. Setup Node.js 8.x, Python 2, and Gulp
-      - name: Setup Node.js 8.x, Python 2, and Gulp
+      # 2. Setup Node.js 14.x, Python 2, and Gulp
+      - name: Setup Node.js 14.x, Python 2, and Gulp
         run: |
           # Install NVM (Node Version Manager) - Latest Stable Version
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
@@ -27,9 +27,9 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-          # Install Node.js 8.x
-          nvm install 8
-          nvm use 8
+          # Install Node.js 14.x
+          nvm install 14
+          nvm use 14
 
           # Verify Node.js and npm installation
           echo "Node.js version:"
@@ -56,7 +56,7 @@ jobs:
 
       # 3. Install Project Dependencies
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       # 4. Build the Project
       - name: Build the Package
