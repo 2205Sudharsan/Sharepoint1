@@ -17,21 +17,38 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2. Install Node.js 8.x using NVM
-      - name: Install Node.js 8.x using NVM
+      # 2. Setup Node.js 8.x, Python 2, and Gulp
+      - name: Setup Node.js 8.x, Python 2, and Gulp
         run: |
-          # Install NVM
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+          # Install NVM (Node Version Manager)
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
           export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Load NVM
+
           # Install Node.js 8.x
           nvm install 8
           nvm use 8
-          
-          # Verify installation
+
+          # Verify Node.js and npm installation
+          echo "Node.js version:"
           node -v
+          echo "npm version:"
           npm -v
+
+          # Install Python 2
+          sudo apt-get update
+          sudo apt-get install -y python2
+          sudo ln -s /usr/bin/python2 /usr/bin/python  # Link 'python' to 'python2'
+
+          # Verify Python installation
+          echo "Python version:"
+          python --version
+
+          # Install Gulp globally (version 3.9.1)
+          npm install -g gulp@3.9.1
+
+          # Verify Gulp installation
+          gulp -v
 
       # 3. Install Project Dependencies
       - name: Install Dependencies
@@ -39,15 +56,15 @@ jobs:
 
       # 4. Build the Project
       - name: Build the Package
-        run: npm run build --if-present
+        run: gulp build
 
       # 5. Bundle the Project
       - name: Bundle the Package
-        run: npm run bundle --if-present
+        run: gulp bundle
 
       # 6. Package the Solution
       - name: Package Solution
-        run: npm run package-solution --if-present
+        run: gulp package-solution
 
       # 7. Upload the Packaged .sppkg File as an Artifact
       - name: Upload Package Artifact
@@ -82,7 +99,7 @@ jobs:
           }
 
           # Deploy the app if it's not already deployed
-          $app = Get-PnPApp | Where-Object { $_.Title -eq "Test" } # Replace with your actual app name
+          $app = Get-PnPApp | Where-Object { $_.Title -eq "sharepoint-1" } # Replace "Test" with your actual app name
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
