@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '8.17.0'  # Specify the Node.js version
+          node-version: '10'  # Specify the Node.js version
 
       # 3. Install Gulp globally
       - name: Install Gulp@3.9.1
@@ -86,3 +86,4 @@ jobs:
           if ($app -and -not $app.IsDeployed) {
             Install-PnPApp -Identity $app.Id -Scope Tenant
           }
+
